@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Arquitectura de ZendaMod Next</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      --bg: #f4f7fb;
+      --panel: #fff;
+      --ink: #172334;
+      --muted: #53647a;
+      --line: #cbd5e1;
+      --blue: #2563eb;
+      --green: #15803d;
+      --amber: #a16207;
+      --red: #b91c1c;
+      --chip: #e8eef8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e1522;
+        --panel: #172235;
+        --ink: #e6edf7;
+        --muted: #a8b6ca;
+        --line: #41516a;
+        --blue: #8ab4ff;
+        --green: #75d995;
+        --amber: #f2c66d;
+        --red: #ff9292;
+        --chip: #263650;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 32px auto 56px;
+    }
+    h1 { margin-bottom: 8px; }
+    h2 { margin-top: 0; }
+    h3 { margin: 20px 0 8px; }
+    p { color: var(--muted); }
+    a { color: var(--blue); }
+    .intro { max-width: 850px; margin-bottom: 24px; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 24px;
+    }
+    .badge, .tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 9px;
+      font-size: .78rem;
+      font-weight: 650;
+      vertical-align: middle;
+      background: var(--chip);
+      color: var(--muted);
+    }
+    .badge.current { color: var(--green); }
+    .badge.planned { color: var(--amber); }
+    .badge.disabled { color: var(--red); }
+    .panels {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 510px), 1fr));
+      gap: 20px;
+      align-items: start;
+    }
+    .panel {
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: 0 8px 24px rgb(15 23 42 / 7%);
+    }
+    .panel.current { border-top: 4px solid var(--green); }
+    .panel.target { border-top: 4px solid var(--blue); }
+    .tree, .tree ul {
+      list-style: none;
+      margin: 0;
+      padding-left: 20px;
+    }
+    .tree { padding-left: 0; }
+    .tree ul {
+      margin-left: 9px;
+      border-left: 1px solid var(--line);
+    }
+    .tree li {
+      position: relative;
+      margin: 7px 0;
+      padding-left: 12px;
+    }
+    .tree ul > li::before {
+      position: absolute;
+      top: .9em;
+      left: 0;
+      width: 9px;
+      border-top: 1px solid var(--line);
+      content: "";
+    }
+    details > summary, .leaf {
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: var(--bg);
+    }
+    details > summary {
+      cursor: pointer;
+      font-weight: 650;
+    }
+    details > summary:hover, details > summary:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 1px;
+    }
+    .root > summary { background: var(--chip); }
+    .leaf { display: block; }
+    .leaf strong { color: var(--ink); }
+    .note {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: .9rem;
+      font-weight: 400;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 18px;
+    }
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 11px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--blue); }
+    .footnote {
+      margin-top: 24px;
+      padding: 14px 16px;
+      border-left: 4px solid var(--amber);
+      background: var(--panel);
+    }
+    @media (max-width: 560px) {
+      main { width: min(100% - 20px, 1180px); margin-top: 18px; }
+      .panel { padding: 15px; }
+      .tree, .tree ul { padding-left: 14px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="intro">
+    <h1>Arquitectura de ZendaMod Next</h1>
+    <p>
+      Vista en árbol expandible del estado actual y de la arquitectura objetivo.
+      El árbol actual refleja una implementación parcial/offline; el objetivo es
+      una dirección futura y no implica que esas funciones ya estén terminadas.
+      Actualizado según <a href="../STATE.md">STATE.md</a> al 19 de octubre de 2026.
+      <a href="ARCHITECTURE_GAP_ASSESSMENT.md">Ver evaluación de brechas empresariales</a>
+      · <a href="ENGINEERING_METHODS.md">Ver métodos de ingeniería recomendados</a>
+      · <a href="EXTERNAL_ARCHITECTURE_REVIEW.md">Ver síntesis contrastada de revisión externa</a>.
+    </p>
+    <div class="legend" aria-label="Leyenda">
+      <span class="badge current">Actual / existente</span>
+      <span class="badge planned">Planificado</span>
+      <span class="badge disabled">Deshabilitado / no integrado</span>
+    </div>
+  </header>
+
+  <nav class="toolbar" aria-label="Controles del árbol">
+    <button type="button" data-action="expand">Expandir todo</button>
+    <button type="button" data-action="collapse">Contraer todo</button>
+  </nav>
+
+  <div class="panels">
+    <section class="panel current" aria-labelledby="current-title">
+      <h2 id="current-title">1. Arquitectura actual <span class="badge current">Parcial</span></h2>
+      <ul class="tree">
+        <li>
+          <details class="root" open>
+            <summary>ZendaMod-Next</summary>
+            <ul>
+              <li>
+                <details open>
+                  <summary><code>public/</code> · webroot</summary>
+                  <ul>
+                    <li><span class="leaf"><strong><code>index.php</code></strong><span class="note">Punto de entrada HTTP</span></span></li>
+                    <li>
+                      <details open>
+                        <summary><code>src/Bootstrap</code> · composición estática</summary>
+                        <ul>
+                          <li><span class="leaf"><strong>Router y handlers</strong><span class="note">Rutas y controladores compuestos por el kernel; no los registra un plugin runtime.</span></span></li>
+                          <li><span class="leaf"><strong>Plugins: descubrimiento de datos</strong><span class="note">Valida manifiestos/paquetes sin ejecutar código.</span></span></li>
+                          <li><span class="leaf"><strong>Aprobaciones y revisión</strong><span class="note">Cimientos de persistencia/política; todavía sin activación HTTP de plugins.</span></span></li>
+                        </ul>
+                      </details>
+                    </li>
+                    <li>
+                      <details open>
+                        <summary><code>src/Modules</code> · módulos transicionales</summary>
+                        <ul>
+                          <li><span class="leaf"><strong>Identity</strong><span class="note">Sesiones y cuentas del sitio, perfiles web; no identidad nativa MU.</span></span></li>
+                          <li><span class="leaf"><strong>Content</strong><span class="note">Anuncios y lectura opcional de Drupal.</span></span></li>
+                          <li><span class="leaf"><strong>Community</strong><span class="note">Tickets de soporte del sitio.</span></span></li>
+                          <li><span class="leaf"><strong>GameData</strong><span class="note">Guías, eventos y proyecciones/previews sintéticos relacionados con MU.</span></span></li>
+                          <li><span class="leaf"><strong>Admin</strong><span class="note">Configuración web y herramientas administrativas.</span></span></li>
+                          <li><span class="leaf"><strong>Templates</strong><span class="note">JSON canónico y renderizado de solo lectura; publicación deshabilitada.</span></span></li>
+                          <li><span class="leaf"><strong>Contratos V1–V5</strong><span class="note">Superficies públicas congeladas/aditivas; no son el SDK MainAPI.</span></span></li>
+                        </ul>
+                      </details>
+                    </li>
+                    <li>
+                      <details open>
+                        <summary><code>packages/premium/</code></summary>
+                        <ul>
+                          <li><span class="leaf"><strong>Webshop y VIP</strong><span class="note">Paquetes separados con catálogos y previews sintéticos; sin fulfillment nativo.</span></span></li>
+                        </ul>
+                      </details>
+                    </li>
+                    <li>
+                      <details>
+                        <summary>Persistencia web</summary>
+                        <ul>
+                          <li><span class="leaf"><strong>MSSQL del sitio</strong><span class="note">Adaptadores preparados por familia y evidencia de laboratorio acotada; no certifica producción ni todas las rutas.</span></span></li>
+                          <li><span class="leaf"><strong>Archivo / SQLite</strong><span class="note">Prototipos offline y fixtures; no deben ser fallback silencioso del modo DB.</span></span></li>
+                          <li><span class="leaf"><strong>Drupal</strong><span class="note">Lectura anónima de noticias cuando se configura.</span></span></li>
+                          <li><span class="leaf"><strong>Bases nativas MU</strong><span class="note">Cuentas/juego no conectados para operaciones nativas.</span></span></li>
+                        </ul>
+                      </details>
+                    </li>
+                    <li>
+                      <details>
+                        <summary><code>architecture/</code></summary>
+                        <ul>
+                          <li><span class="leaf"><strong>Catálogos y política estáticos</strong><span class="note">Describen el plan; no activan todos los módulos en producción.</span></span></li>
+                        </ul>
+                      </details>
+                    </li>
+                  </ul>
+                </details>
+              </li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+      <div class="footnote">
+        <strong>No habilitado:</strong> escritura nativa MU, pagos/entrega de
+        compras y publicación de plantillas. El runtime ejecutable de plugins y
+        su ciclo HTTP añadir/quitar/reponer siguen pendientes.
+      </div>
+    </section>
+
+    <section class="panel target" aria-labelledby="target-title">
+      <h2 id="target-title">2. Arquitectura objetivo <span class="badge planned">Futura</span></h2>
+      <ul class="tree">
+        <li>
+          <details class="root" open>
+            <summary>ZendaMod-Next · kernel pequeño + plugins removibles</summary>
+            <ul>
+              <li>
+                <details open>
+                  <summary>Kernel confiable</summary>
+                  <ul>
+                    <li><span class="leaf"><strong><code>public/</code> y router</strong><span class="note">Webroot público y despacho HTTP.</span></span></li>
+                    <li><span class="leaf"><strong>Auth web / permisos / AdminCP base</strong><span class="note">Autoridad administrativa del sitio separada de las cuentas de juego.</span></span></li>
+                    <li><span class="leaf"><strong>MainAPI / PluginHost versionada</strong><span class="note">Única entrada de plugins; registro acotado, sin depender de carpetas opcionales.</span></span></li>
+                    <li><span class="leaf"><strong>MSSQL propio del sitio</strong><span class="note">Configuración, aprobaciones, migraciones revisadas, auditoría y datos persistentes.</span></span></li>
+                  </ul>
+                </details>
+              </li>
+              <li>
+                <details open>
+                  <summary>Ciclo de vida de <code>plugins/&lt;vendor&gt;.&lt;slug&gt;/</code></summary>
+                  <ul>
+                    <li><span class="leaf"><strong>1. Descubrimiento</strong><span class="note">Manifiesto/huellas de datos; sin ejecutar PHP al explorar carpetas.</span></span></li>
+                    <li><span class="leaf"><strong>2. Confianza y compatibilidad</strong><span class="note">Aprobación, versión de API, dependencias, permisos y licencia.</span></span></li>
+                    <li><span class="leaf"><strong>3. Registro por request/worker</strong><span class="note">Contribuciones presentes y aprobadas en una instantánea acotada.</span></span></li>
+                    <li><span class="leaf"><strong>4. Remoción física</strong><span class="note">Revoca rutas/superficies en el siguiente request; no borra los datos MSSQL.</span></span></li>
+                    <li><span class="leaf"><strong>5. Reinstalación compatible</strong><span class="note">Revalida y puede reanudar estado retenido; no omite aprobación/migraciones.</span></span></li>
+                    <li><span class="leaf"><strong>Kernel vacío</strong><span class="note">El sitio base/AdminCP puede arrancar con <code>plugins/</code> vacío.</span></span></li>
+                  </ul>
+                </details>
+              </li>
+              <li>
+                <details open>
+                  <summary>APIs de proveedores independientes</summary>
+                  <ul>
+                    <li><span class="leaf"><strong>MainAPI</strong><span class="note">Rutas, eventos, servicios, AdminCP, jobs y widgets.</span></span></li>
+                    <li><span class="leaf"><strong>GameTypeAPI</strong><span class="note">Identidad/familia de juego y capacidades normalizadas (MU primero).</span></span></li>
+                    <li><span class="leaf"><strong>DatabaseTypeAPI</strong><span class="note">Transporte opcional de datos de juego; nunca provee el MSSQL del kernel.</span></span></li>
+                    <li><span class="leaf"><strong>SchemaAdapterAPI</strong><span class="note">Interpretación validada del esquema/emulador, por ejemplo MUEMU o Louis.</span></span></li>
+                  </ul>
+                </details>
+              </li>
+              <li>
+                <details open>
+                  <summary>Paquetes bajo <code>plugins/</code></summary>
+                  <ul>
+                    <li><span class="leaf"><strong>Proveedores</strong><span class="note"><code>zenda.game.mu</code> · <code>zenda.db.mssql</code> · <code>zenda.schema.muemu</code> como ejemplos objetivo.</span></span></li>
+                    <li><span class="leaf"><strong>Funciones gratuitas</strong><span class="note">Noticias, rankings, perfiles y soporte como plugins independientes.</span></span></li>
+                    <li><span class="leaf"><strong>Funciones premium</strong><span class="note">Webshop, VIP, inventario y mercados en paquetes físicamente separados.</span></span></li>
+                    <li><span class="leaf"><strong>Superficies</strong><span class="note">Rutas, AdminCP, eventos, jobs, widgets y plantillas versionados.</span></span></li>
+                  </ul>
+                </details>
+              </li>
+              <li>
+                <details open>
+                  <summary>Perfil de realm y datos separados</summary>
+                  <ul>
+                    <li><span class="leaf"><strong>Perfil de realm</strong><span class="note">Asocia juego + transporte + esquema exacto validado y topología.</span></span></li>
+                    <li><span class="leaf"><strong>MSSQL del sitio</strong><span class="note">Siempre propiedad del kernel; independiente del plugin de transporte de juego.</span></span></li>
+                    <li><span class="leaf"><strong>Datos de cuentas</strong><span class="note">Opcionales; pueden compartir la base de juego o estar separados.</span></span></li>
+                    <li><span class="leaf"><strong>Datos del juego</strong><span class="note">Lecturas vía puertos normalizados; sin SQL nativo directo desde plugins de función.</span></span></li>
+                    <li><span class="leaf"><strong>Topología</strong><span class="note">Una base unificada o almacenamiento dividido en varias bases.</span></span></li>
+                  </ul>
+                </details>
+              </li>
+              <li>
+                <details>
+                  <summary>Operaciones sensibles · siempre protegidas</summary>
+                  <ul>
+                    <li><span class="leaf"><strong>Mutaciones MU</strong><span class="note">Propiedad verificada, jugador offline, lock, recheck, idempotencia y auditoría.</span></span></li>
+                    <li><span class="leaf"><strong>Pagos</strong><span class="note">Callback verificado, protección de replay, valores inmutables y transición auditada.</span></span></li>
+                    <li><span class="leaf"><strong>Plantillas</strong><span class="note">JSON canónico; preview privado; publicación bajo pipeline validado.</span></span></li>
+                  </ul>
+                </details>
+              </li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+      <div class="footnote">
+        <strong>Dirección, no estado actual:</strong> migración gradual de módulos y
+        paquetes existentes. APIs GameType, DatabaseType y SchemaAdapter aún son
+        especificaciones; no describen runtime disponible hoy.
+      </div>
+    </section>
+  </div>
+
+  <p><a href="ARCHITECTURE_DIAGRAMS.md">Abrir la versión Markdown y Mermaid</a></p>
+</main>
+<script>
+  document.querySelectorAll("[data-action]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var shouldOpen = button.getAttribute("data-action") === "expand";
+      document.querySelectorAll("details").forEach(function (item) {
+        item.open = shouldOpen;
+      });
+    });
+  });
+</script>
+</body>
+</html>
